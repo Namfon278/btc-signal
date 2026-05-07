@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BTC สัญญาณ">
+<title>BTC/USDT สัญญาณเทรด</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050a0e;
+    --panel: #0a1520;
+    --border: #0e2a3a;
+    --accent: #00d4ff;
+    --green: #00ff88;
+    --red: #ff3366;
+    --yellow: #ffcc00;
+    --text: #c8e0f0;
+    --dim: #4a7090;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Sarabun', sans-serif;
+    min-height: 100vh;
+    padding-bottom: 30px;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  .header {
+    padding: 16px 16px 12px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(0,212,255,0.06) 0%, transparent 100%);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .header h1 { font-size: 1.15rem; font-weight: 700; color: var(--accent); }
+  .header p { font-size: 0.7rem; color: var(--dim); margin-top: 2px; }
+
+  .live-badge {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(0,255,136,0.08);
+    border: 1px solid rgba(0,255,136,0.2);
+    padding: 5px 10px; border-radius: 20px;
+    font-size: 0.7rem; color: var(--green);
+  }
+
+  .live-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green);
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0%,100%{opacity:1;transform:scale(1)}
+    50%{opacity:.4;transform:scale(.7)}
+  }
+
+  .content { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+
+  /* ราคา */
+  .price-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+
+  .price-label { font-size: 0.7rem; color: var(--dim); text-transform: uppercase; letter-spacing: 1.5px; }
+  .price-value { font-family: 'Share Tech Mono'; font-size: 1.9rem; color: #fff; margin: 3px 0; }
+  .price-change { font-size: 0.9rem; font-weight: 600; }
+  .price-change.up { color: var(--green); }
+  .price-change.down { color: var(--red); }
+
+  .price-right { text-align: right; }
+  .price-right .price-label { margin-bottom: 4px; }
+  .vol-val { font-family: 'Share Tech Mono'; font-size: 0.9rem; color: #fff; }
+  .hl-val { font-family: 'Share Tech Mono'; font-size: 0.72rem; color: var(--dim); margin-top: 4px; }
+
+  /* สัญญาณ */
+  .signal-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .signal-title { font-size: 0.7rem; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; }
+
+  .signal-light {
+    width: 90px; height: 90px; border-radius: 50%;
+    margin: 0 auto 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.2rem;
+    transition: all 0.5s ease;
+  }
+
+  .signal-light.buy {
+    background: radial-gradient(circle, rgba(0,255,136,0.25), rgba(0,255,136,0.04));
+    border: 2px solid var(--green);
+    box-shadow: 0 0 25px rgba(0,255,136,0.4);
+    animation: glow-green 2s infinite;
+  }
+  .signal-light.sell {
+    background: radial-gradient(circle, rgba(255,51,102,0.25), rgba(255,51,102,0.04));
+    border: 2px solid var(--red);
+    box-shadow: 0 0 25px rgba(255,51,102,0.4);
+    animation: glow-red 2s infinite;
+  }
+  .signal-light.wait {
+    background: radial-gradient(circle, rgba(255,204,0,0.2), rgba(255,204,0,0.04));
+    border: 2px solid var(--yellow);
+    box-shadow: 0 0 20px rgba(255,204,0,0.25);
+  }
+
+  @keyframes glow-green {
+    0%,100%{box-shadow:0 0 25px rgba(0,255,136,.4)}
+    50%{box-shadow:0 0 45px rgba(0,255,136,.65)}
+  }
+  @keyframes glow-red {
+    0%,100%{box-shadow:0 0 25px rgba(255,51,102,.4)}
+    50%{box-shadow:0 0 45px rgba(255,51,102,.65)}
+  }
+
+  .signal-text { font-size: 1.7rem; font-weight: 700; letter-spacing: 1px; margin-bottom: 6px; transition: color .5s; }
+  .signal-text.buy { color: var(--green); }
+  .signal-text.sell { color: var(--red); }
+  .signal-text.wait { color: var(--yellow); }
+  .signal-reason { font-size: 0.78rem; color: var(--dim); line-height: 1.6; }
+
+  /* Indicators */
+  .ind-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .ind-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+  }
+
+  .ind-label { font-size: 0.65rem; color: var(--dim); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; }
+  .ind-value { font-family: 'Share Tech Mono'; font-size: 1.5rem; font-weight: 600; color: #fff; margin-bottom: 4px; }
+  .ind-value.sm { font-size: 1rem; }
+
+  .ind-status {
+    font-size: 0.7rem; padding: 2px 8px; border-radius: 8px;
+    display: inline-block; font-weight: 600;
+  }
+  .ind-status.green { background: rgba(0,255,136,.12); color: var(--green); }
+  .ind-status.red { background: rgba(255,51,102,.12); color: var(--red); }
+  .ind-status.yellow { background: rgba(255,204,0,.12); color: var(--yellow); }
+
+  .ind-bar-bg { width:100%; height:5px; background:rgba(255,255,255,.06); border-radius:3px; margin-top:8px; overflow:hidden; }
+  .ind-bar-fill { height:100%; border-radius:3px; transition: width 1s ease; }
+
+  .ind-sub { font-size: 0.65rem; color: var(--dim); margin-top: 6px; }
+
+  /* คำแนะนำ */
+  .advice-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+  }
+
+  .advice-title { font-size: 0.7rem; color: var(--dim); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+
+  .advice-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(255,255,255,.04);
+  }
+  .advice-row:last-child { border-bottom: none; }
+  .advice-key { font-size: 0.78rem; color: var(--dim); }
+  .advice-val { font-family: 'Share Tech Mono'; font-size: 0.82rem; font-weight: 600; }
+  .advice-val.green { color: var(--green); }
+  .advice-val.red { color: var(--red); }
+  .advice-val.white { color: #fff; }
+  .advice-val.yellow { color: var(--yellow); }
+
+  /* disclaimer */
+  .disclaimer {
+    background: rgba(255,204,0,.04);
+    border: 1px solid rgba(255,204,0,.15);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.7rem;
+    color: rgba(255,204,0,.6);
+    text-align: center;
+    line-height: 1.6;
+  }
+
+  .update-row { text-align:center; font-size:0.68rem; color:var(--dim); }
+  #update-time { color: var(--accent); }
+
+  /* loading */
+  .loading {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 100; transition: opacity .5s;
+  }
+  .loading.hidden { opacity:0; pointer-events:none; }
+  .loader-ring {
+    width:50px; height:50px;
+    border: 3px solid rgba(0,212,255,.15);
+    border-top-color: var(--accent);
+    border-radius:50%;
+    animation: spin .8s linear infinite;
+    margin-bottom:14px;
+  }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .loading p { color:var(--dim); font-size:.82rem; }
+
+  /* ปุ่มรีเฟรช */
+  .refresh-btn {
+    width: 100%;
+    background: rgba(0,212,255,0.08);
+    border: 1px solid rgba(0,212,255,0.2);
+    border-radius: 12px;
+    color: var(--accent);
+    font-family: 'Sarabun', sans-serif;
+    font-size: 0.9rem;
+    padding: 12px;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .refresh-btn:active { background: rgba(0,212,255,0.15); }
+</style>
+</head>
+<body>
+
+<div class="loading" id="loading">
+  <div class="loader-ring"></div>
+  <p>กำลังโหลดข้อมูล BTC/USDT...</p>
+</div>
+
+<div class="header">
+  <div>
+    <h1>⚡ BTC/USDT สัญญาณ</h1>
+    <p>วิเคราะห์อัตโนมัติ · Binance Real-time</p>
+  </div>
+  <div class="live-badge">
+    <div class="live-dot"></div>
+    สด
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- ราคา -->
+  <div class="price-card">
+    <div>
+      <div class="price-label">ราคาปัจจุบัน</div>
+      <div class="price-value" id="price">--</div>
+      <div class="price-change" id="price-change">--</div>
+    </div>
+    <div class="price-right">
+      <div class="price-label">ปริมาณ 24ชม.</div>
+      <div class="vol-val" id="volume">--</div>
+      <div class="price-label" style="margin-top:6px">สูง / ต่ำ</div>
+      <div class="hl-val" id="highlow">--</div>
+    </div>
+  </div>
+
+  <!-- สัญญาณหลัก -->
+  <div class="signal-card">
+    <div class="signal-title">สัญญาณรวม</div>
+    <div class="signal-light wait" id="signal-light">⏳</div>
+    <div class="signal-text wait" id="signal-text">กำลังวิเคราะห์...</div>
+    <div class="signal-reason" id="signal-reason">รอโหลดข้อมูล</div>
+  </div>
+
+  <!-- Indicators -->
+  <div class="ind-grid">
+    <div class="ind-card">
+      <div class="ind-label">RSI (14)</div>
+      <div class="ind-value" id="rsi-val">--</div>
+      <span class="ind-status yellow" id="rsi-status">รอข้อมูล</span>
+      <div class="ind-bar-bg"><div class="ind-bar-fill" id="rsi-bar" style="width:0%;background:var(--yellow)"></div></div>
+    </div>
+    <div class="ind-card">
+      <div class="ind-label">MACD</div>
+      <div class="ind-value" id="macd-val">--</div>
+      <span class="ind-status yellow" id="macd-status">รอข้อมูล</span>
+      <div class="ind-sub">Signal: <span id="macd-signal">--</span></div>
+    </div>
+    <div class="ind-card">
+      <div class="ind-label">MA20 / MA50</div>
+      <div class="ind-value sm" id="ma-val">--</div>
+      <span class="ind-status yellow" id="ma-status">รอข้อมูล</span>
+      <div class="ind-sub">MA50: <span id="ma50-val">--</span></div>
+    </div>
+    <div class="ind-card">
+      <div class="ind-label">แรงซื้อ-ขาย</div>
+      <div class="ind-value" id="vol-ratio">--</div>
+      <span class="ind-status yellow" id="vol-status">รอข้อมูล</span>
+      <div class="ind-sub">เทียบ 20 แท่ง</div>
+    </div>
+  </div>
+
+  <!-- คำแนะนำ -->
+  <div class="advice-card">
+    <div class="advice-title">📋 คำแนะนำการเทรด</div>
+    <div class="advice-row">
+      <span class="advice-key">แนะนำ</span>
+      <span class="advice-val white" id="adv-action">--</span>
+    </div>
+    <div class="advice-row">
+      <span class="advice-key">จุดเข้าซื้อ</span>
+      <span class="advice-val green" id="adv-entry">--</span>
+    </div>
+    <div class="advice-row">
+      <span class="advice-key">Stop Loss</span>
+      <span class="advice-val red" id="adv-sl">--</span>
+    </div>
+    <div class="advice-row">
+      <span class="advice-key">Take Profit</span>
+      <span class="advice-val green" id="adv-tp">--</span>
+    </div>
+    <div class="advice-row">
+      <span class="advice-key">ความเสี่ยง</span>
+      <span class="advice-val yellow" id="adv-risk">--</span>
+    </div>
+  </div>
+
+  <!-- ปุ่มรีเฟรช -->
+  <button class="refresh-btn" onclick="fetchData()">🔄 รีเฟรชข้อมูลด้วยตัวเอง</button>
+
+  <div class="disclaimer">
+    ⚠️ ระบบนี้เป็นเพียงเครื่องมือช่วยวิเคราะห์ ไม่ใช่คำแนะนำการลงทุน<br>การเทรด Crypto มีความเสี่ยงสูง กรุณาใช้วิจารณญาณของตนเองด้วย
+  </div>
+
+  <div class="update-row">อัปเดตล่าสุด: <span id="update-time">--</span> · รีเฟรชทุก 30 วิ</div>
+
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function calcRSI(closes, period=14) {
+  if(closes.length < period+1) return null;
+  let gains=0,losses=0;
+  for(let i=1;i<=period;i++){const d=closes[i]-closes[i-1];if(d>0)gains+=d;else losses-=d;}
+  let ag=gains/period,al=losses/period;
+  for(let i=period+1;i<closes.length;i++){
+    const d=closes[i]-closes[i-1];
+    ag=(ag*(period-1)+(d>0?d:0))/period;
+    al=(al*(period-1)+(d<0?-d:0))/period;
+  }
+  if(al===0)return 100;
+  return 100-100/(1+ag/al);
+}
+
+function calcEMA(data,period){
+  const k=2/(period+1);
+  let ema=data.slice(0,period).reduce((a,b)=>a+b,0)/period;
+  for(let i=period;i<data.length;i++) ema=data[i]*k+ema*(1-k);
+  return ema;
+}
+
+function calcMACD(closes){
+  if(closes.length<35)return null;
+  const macd=calcEMA(closes,12)-calcEMA(closes,26);
+  return{macd,signal:macd*0.92};
+}
+
+function calcMA(closes,period){
+  if(closes.length<period)return null;
+  return closes.slice(-period).reduce((a,b)=>a+b,0)/period;
+}
+
+function fmt(n){return Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+
+async function fetchData(){
+  try{
+    const [tickerRes,klinesRes]=await Promise.all([
+      fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT'),
+      fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100')
+    ]);
+    const ticker=await tickerRes.json();
+    const klines=await klinesRes.json();
+
+    const closes=klines.map(k=>parseFloat(k[4]));
+    const volumes=klines.map(k=>parseFloat(k[5]));
+    const cur=parseFloat(ticker.lastPrice);
+    const chg=parseFloat(ticker.priceChangePercent);
+
+    $('price').textContent='$'+fmt(cur);
+    const ce=$('price-change');
+    ce.textContent=(chg>=0?'▲ +':'▼ ')+chg.toFixed(2)+'%';
+    ce.className='price-change '+(chg>=0?'up':'down');
+    $('volume').textContent=(parseFloat(ticker.volume)/1000).toFixed(1)+'K BTC';
+    $('highlow').textContent='$'+fmt(ticker.highPrice)+' / $'+fmt(ticker.lowPrice);
+
+    // RSI
+    const rsi=calcRSI(closes);
+    if(rsi!==null){
+      $('rsi-val').textContent=rsi.toFixed(1);
+      $('rsi-bar').style.width=rsi+'%';
+      if(rsi<30){$('rsi-status').textContent='น่าซื้อ';$('rsi-status').className='ind-status green';$('rsi-bar').style.background='var(--green)';}
+      else if(rsi>70){$('rsi-status').textContent='น่าขาย';$('rsi-status').className='ind-status red';$('rsi-bar').style.background='var(--red)';}
+      else{$('rsi-status').textContent='รอดู';$('rsi-status').className='ind-status yellow';$('rsi-bar').style.background='var(--yellow)';}
+    }
+
+    // MACD
+    const md=calcMACD(closes);
+    if(md){
+      $('macd-val').textContent=md.macd.toFixed(1);
+      $('macd-signal').textContent=md.signal.toFixed(1);
+      if(md.macd>md.signal){$('macd-status').textContent='ขาขึ้น';$('macd-status').className='ind-status green';}
+      else{$('macd-status').textContent='ขาลง';$('macd-status').className='ind-status red';}
+    }
+
+    // MA
+    const ma20=calcMA(closes,20);const ma50=calcMA(closes,50);
+    if(ma20&&ma50){
+      $('ma-val').textContent='$'+fmt(ma20);
+      $('ma50-val').textContent='$'+fmt(ma50);
+      if(cur>ma20&&ma20>ma50){$('ma-status').textContent='เหนือเส้น';$('ma-status').className='ind-status green';}
+      else if(cur<ma20&&ma20<ma50){$('ma-status').textContent='ต่ำกว่าเส้น';$('ma-status').className='ind-status red';}
+      else{$('ma-status').textContent='ผสม';$('ma-status').className='ind-status yellow';}
+    }
+
+    // Volume
+    const avgV=volumes.slice(-20).reduce((a,b)=>a+b,0)/20;
+    const vr=volumes[volumes.length-1]/avgV;
+    $('vol-ratio').textContent=vr.toFixed(2)+'x';
+    if(vr>1.5){$('vol-status').textContent='แรงมาก';$('vol-status').className='ind-status green';}
+    else if(vr<0.7){$('vol-status').textContent='เบา';$('vol-status').className='ind-status red';}
+    else{$('vol-status').textContent='ปกติ';$('vol-status').className='ind-status yellow';}
+
+    // สัญญาณรวม
+    let buy=0,sell=0;const reasons=[];
+    if(rsi!==null){if(rsi<35){buy+=2;reasons.push('RSI ต่ำ');}else if(rsi>65){sell+=2;reasons.push('RSI สูง');}}
+    if(md){if(md.macd>md.signal){buy++;reasons.push('MACD ขาขึ้น');}else{sell++;reasons.push('MACD ขาลง');}}
+    if(ma20&&ma50){if(cur>ma20&&ma20>ma50){buy++;reasons.push('เหนือเส้น MA');}else if(cur<ma20){sell++;reasons.push('ต่ำกว่า MA');}}
+    if(chg>2){buy++;reasons.push('ราคาขึ้น +'+chg.toFixed(1)+'%');}
+    else if(chg<-2){sell++;reasons.push('ราคาลง '+chg.toFixed(1)+'%');}
+
+    const sl=$('signal-light'),st=$('signal-text'),sr=$('signal-reason');
+
+    if(buy>sell&&buy>=2){
+      sl.className='signal-light buy';sl.textContent='🟢';
+      st.className='signal-text buy';st.textContent='✅ ซื้อ / BUY';
+      sr.textContent='เหตุผล: '+reasons.join(' · ');
+      $('adv-action').textContent='✅ ซื้อ BTC';
+      $('adv-entry').textContent='$'+fmt(cur);
+      $('adv-sl').textContent='$'+fmt((cur*.97).toFixed(2))+' (-3%)';
+      $('adv-tp').textContent='$'+fmt((cur*1.05).toFixed(2))+' (+5%)';
+      $('adv-risk').textContent='ปานกลาง';
+    } else if(sell>buy&&sell>=2){
+      sl.className='signal-light sell';sl.textContent='🔴';
+      st.className='signal-text sell';st.textContent='❌ ขาย / SELL';
+      sr.textContent='เหตุผล: '+reasons.join(' · ');
+      $('adv-action').textContent='❌ ขาย BTC';
+      $('adv-entry').textContent='$'+fmt(cur);
+      $('adv-sl').textContent='$'+fmt((cur*1.03).toFixed(2))+' (+3%)';
+      $('adv-tp').textContent='$'+fmt((cur*.95).toFixed(2))+' (-5%)';
+      $('adv-risk').textContent='ปานกลาง';
+    } else {
+      sl.className='signal-light wait';sl.textContent='⏳';
+      st.className='signal-text wait';st.textContent='⏸ รอดู / WAIT';
+      sr.textContent='สัญญาณยังไม่ชัด · '+(reasons.length?reasons.join(' · '):'ยังไม่มีสัญญาณชัดเจน');
+      $('adv-action').textContent='⏸ รอดูก่อน';
+      $('adv-entry').textContent='ยังไม่แนะนำเข้า';
+      $('adv-sl').textContent='--';$('adv-tp').textContent='--';
+      $('adv-risk').textContent='สูง (ตลาดไม่ชัด)';
+    }
+
+    $('update-time').textContent=new Date().toLocaleTimeString('th-TH');
+    $('loading').classList.add('hidden');
+
+  } catch(e){
+    $('signal-text').textContent='⚠️ โหลดไม่ได้';
+    $('signal-reason').textContent='ตรวจสอบอินเทอร์เน็ตแล้วกดรีเฟรชค่ะ';
+    $('loading').classList.add('hidden');
+  }
+}
+
+fetchData();
+setInterval(fetchData,30000);
+</script>
+</body>
+</html>
